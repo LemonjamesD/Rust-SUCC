@@ -104,6 +104,7 @@ impl<'a> Serializer for &'a mut SUCCSerializer {
     }
 
     fn serialize_f64(self, v: f64) -> Result<()> {
+        self.output += &v.to_string();
         Ok(())
     }
 
