@@ -1,8 +1,37 @@
 use serde::{ser::{Serializer, SerializeSeq, SerializeTuple, SerializeTupleStruct, SerializeTupleVariant, SerializeMap, SerializeStruct, SerializeStructVariant}, Serialize};
 
-use error::{Error, Result};
+mod error_handler;
+use error_handler::{Result, Error};
 
+pub enum BoolStyle {
+    TrueFalse,
+    OnOff,
+    YesNo,
+    YN,
+}
+
+impl Default for BoolStyle {
+    fn default() -> Self {
+        Self::TrueFalse
+    }
+}
+
+impl BoolStyle {
+    pub fn to_string(&self, value: bool) -> String {
+        let bools = match self {
+            BoolStyle::TrueFalse => ["true", "false"],
+            BoolStyle::OnOff => ["on", "off"],
+            BoolStyle::YesNo => ["yes", "no"],
+            BoolStyle::YN => ["y", "n"]
+        };
+        let idx = if value { 0 } else { 1 };
+        bools[idx].to_string()
+    }
+}
+
+#[derive(Default)]
 pub struct SUCCSerializer {
+    bool_style: BoolStyle,
     output: String
 }
 
@@ -12,6 +41,7 @@ where
 {
     let mut serializer = SUCCSerializer {
         output: String::new(),
+        ..Default::default()
     };
     value.serialize(&mut serializer)?;
     Ok(serializer.output)
@@ -31,6 +61,8 @@ impl<'a> Serializer for &'a mut SUCCSerializer {
     type SerializeStructVariant = Self;
 
     fn serialize_bool(self, v: bool) -> Result<()> {
+        self.output += &self.bool_style.to_string(v);
+
         Ok(())
     }
 
