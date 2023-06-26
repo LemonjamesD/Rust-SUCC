@@ -113,6 +113,16 @@ impl<'a> Serializer for &'a mut SUCCSerializer {
     }
 
     fn serialize_str(self, v: &str) -> Result<()> {
+        if !v.contains("\n") {
+            self.output += r#"""#;
+            self.output += v;
+            self.output += r#"""#;
+        } else {
+            self.output += r#"""""#;
+            self.output += v;
+            self.output += r#"""""#;
+        }
+        
         Ok(())
     }
 
