@@ -222,7 +222,7 @@ impl<'a> Serializer for &'a mut SUCCSerializer {
     }
 }
 
-impl<'a> SerializeSeq for &'a mut Serializer {
+impl<'a> SerializeSeq for &'a mut SUCCSerializer {
     type Ok = ();
     type Error = Error;
 
@@ -238,7 +238,7 @@ impl<'a> SerializeSeq for &'a mut Serializer {
     }
 }
 
-impl<'a> SerializeTuple for &'a mut Serializer {
+impl<'a> SerializeTuple for &'a mut SUCCSerializer {
     type Ok = ();
     type Error = Error;
 
@@ -254,7 +254,7 @@ impl<'a> SerializeTuple for &'a mut Serializer {
     }
 }
 
-impl<'a> SerializeTupleStruct for &'a mut Serializer {
+impl<'a> SerializeTupleStruct for &'a mut SUCCSerializer {
     type Ok = ();
     type Error = Error;
 
@@ -270,7 +270,7 @@ impl<'a> SerializeTupleStruct for &'a mut Serializer {
     }
 }
 
-impl<'a> SerializeTupleVariant for &'a mut Serializer {
+impl<'a> SerializeTupleVariant for &'a mut SUCCSerializer {
     type Ok = ();
     type Error = Error;
 
@@ -286,7 +286,7 @@ impl<'a> SerializeTupleVariant for &'a mut Serializer {
     }
 }
 
-impl<'a> SerializeMap for &'a mut Serializer {
+impl<'a> SerializeMap for &'a mut SUCCSerializer {
     type Ok = ();
     type Error = Error;
 
@@ -309,7 +309,7 @@ impl<'a> SerializeMap for &'a mut Serializer {
     }
 }
 
-impl<'a> SerializeStruct for &'a mut Serializer {
+impl<'a> SerializeStruct for &'a mut SUCCSerializer {
     type Ok = ();
     type Error = Error;
 
@@ -325,7 +325,7 @@ impl<'a> SerializeStruct for &'a mut Serializer {
     }
 }
 
-impl<'a> SerializeStructVariant for &'a mut Serializer {
+impl<'a> SerializeStructVariant for &'a mut SUCCSerializer {
     type Ok = ();
     type Error = Error;
 
