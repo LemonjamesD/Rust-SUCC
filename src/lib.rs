@@ -5,3 +5,5 @@ use error_handler::{Result, Error};
 
 mod serializer;
 use serializer::*;
+
+mod deserializer;
