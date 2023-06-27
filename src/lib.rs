@@ -38,6 +38,7 @@ pub struct SUCCSerializer {
     field_name: String,
     unindent_flag: bool,
     field_flag: bool,
+    raw_flag: bool,
 }
 
 impl SUCCSerializer {
@@ -51,6 +52,27 @@ impl SUCCSerializer {
         let mut chars = self.tab.as_str();
         let chars = &chars[0..(chars.len()-4)];
         self.tab = chars.to_string();
+    }
+
+    pub fn add_tab(&mut self) {
+        if !self.raw_flag {
+            self.output += &self.tab;
+        }
+    }
+    pub fn add_newline(&mut self) {
+        if !self.raw_flag {
+            self.output += "\n";
+        }
+    }
+    pub fn colon_or(&mut self) {
+        if !self.raw_flag {
+            if self.field_flag {
+                self.output += &self.field_name;
+                self.output += ": ";
+            } else {
+                self.output += "- ";
+            }
+        }
     }
 }
 
@@ -99,7 +121,15 @@ impl<'a> Serializer for &'a mut SUCCSerializer {
     }
 
     fn serialize_i64(self, v: i64) -> Result<()> {
-        self.output += &v.to_string();
+        self.add_tab();
+        if self.raw_flag {
+            self.output += &v.to_string();
+            self.add_newline();
+        } else {
+            self.colon_or();
+            self.output += &v.to_string();
+            self.add_newline();
+        }
         Ok(())
     }
 
@@ -116,15 +146,14 @@ impl<'a> Serializer for &'a mut SUCCSerializer {
     }
 
     fn serialize_u64(self, v: u64) -> Result<()> {
-        self.output += &self.tab;
-        if self.field_flag {
-            self.output += &self.field_name;
-            self.output += ": ";
+        self.add_tab();
+        if self.raw_flag {
+            self.output += &v.to_string();
         } else {
-            self.output += "- ";
+            self.colon_or();
+            self.output += &v.to_string();
         }
-        self.output += &v.to_string();
-        self.output += "\n";
+        self.add_newline();
         Ok(())
     }
 
@@ -133,15 +162,10 @@ impl<'a> Serializer for &'a mut SUCCSerializer {
     }
 
     fn serialize_f64(self, v: f64) -> Result<()> {
-        self.output += &self.tab;
-        if self.field_flag {
-            self.output += &self.field_name;
-            self.output += ": ";
-        } else {
-            self.output += "- ";
-        }
+        self.add_tab();
+        self.colon_or();
         self.output += &v.to_string();
-        self.output += "\n";
+        self.add_newline();
         Ok(())
     }
 
@@ -150,51 +174,35 @@ impl<'a> Serializer for &'a mut SUCCSerializer {
     }
 
     fn serialize_str(self, v: &str) -> Result<()> {
+        self.add_tab();
         if !v.contains("\n") {
             if v.as_bytes()[0] as char == ' ' || v.as_bytes()[v.len() - 1] as char == ' ' {
-                self.output += &self.tab;
-                if self.field_flag {
-                    self.output += &self.field_name;
-                    self.output += ": ";
-                } else {
-                    self.output += "- ";
-                }
+                self.colon_or();
                 self.output += "\"";
                 self.output += v;
-                self.output += "\"\n";
+                self.output += "\"";
             } else {
-                self.output += &self.tab;
-                if self.field_flag {
-                    self.output += &self.field_name;
-                    self.output += ": ";
-                } else {
-                    self.output += "- ";
-                }
+                self.colon_or();
                 self.output += v;
-                self.output += "\n";
             }
         } else {
-            self.output += &self.tab;
-            if self.field_flag {
-                self.output += &self.field_name;
-                self.output += ": ";
-            } else {
-                self.output += "- ";
-            }
+            self.colon_or();
             self.output += "\"\"\"\n";
             self.output += v;
-            self.output += "\n\"\"\"\n";
+            self.output += "\n\"\"\"";
+            self.add_newline();
         }
+        self.add_newline();
         
         Ok(())
     }
 
     fn serialize_bytes(self, v: &[u8]) -> Result<()> {
         for x in v {
-            self.output += &self.tab;
-            self.output += "- ";
+            self.add_tab();
+            self.colon_or();
             self.output += &x.to_string();
-            self.output += "\n";
+            self.add_newline();
         }
         
         Ok(())
@@ -256,7 +264,7 @@ impl<'a> Serializer for &'a mut SUCCSerializer {
     }
 
     fn serialize_seq(self, _len: Option<usize>) -> Result<Self::SerializeSeq> {
-        self.output += &self.tab;
+        self.add_tab();
         self.output += &self.field_name;
         self.output += ": # Gen: Vec\n";
         self.tab += "    ";
@@ -266,7 +274,7 @@ impl<'a> Serializer for &'a mut SUCCSerializer {
     }
 
     fn serialize_tuple(self, len: usize) -> Result<Self::SerializeTuple> {
-        self.output += &self.tab;
+        self.add_tab();
         self.output += &self.field_name;
         self.output += ": # Gen: Tuple\n";
         self.tab += "    ";
@@ -280,7 +288,7 @@ impl<'a> Serializer for &'a mut SUCCSerializer {
         name: &'static str,
         len: usize,
     ) -> Result<Self::SerializeTupleStruct> {
-        self.output += &self.tab;
+        self.add_tab();
         self.output += &self.field_name;
         self.output += ": # Gen: Tuple Struct\n";
         self.unindent_flag = true;
@@ -297,13 +305,18 @@ impl<'a> Serializer for &'a mut SUCCSerializer {
     ) -> Result<Self::SerializeTupleVariant> {
         self.output += variant;
         self.output += ":\n";
-        self.output += &self.tab;
+        self.add_tab();
         self.output += "- ";
         
         Ok(self)
     }
 
     fn serialize_map(self, _len: Option<usize>) -> Result<Self::SerializeMap> {
+        self.decrease_tab();
+        self.output += &self.tab;
+        self.output += &self.field_name;
+        self.output += ": # Gen: HashMap\n";
+        self.increase_tab();
         Ok(self)
     }
 
@@ -312,11 +325,13 @@ impl<'a> Serializer for &'a mut SUCCSerializer {
         name: &'static str,
         len: usize,
     ) -> Result<Self::SerializeStruct> {
-        self.output += &self.tab;
+        self.add_tab();
+        self.output += if &self.field_name == "" { name } else { &self.field_name };
+        self.output += ": # Gen: ";
         self.output += name;
-        self.output += ":\n";
+        self.output += " Struct\n";
         self.tab += "    ";
-        self.serialize_map(Some(len))
+        Ok(self)
     }
 
     fn serialize_struct_variant(
@@ -406,14 +421,23 @@ impl<'a> SerializeMap for &'a mut SUCCSerializer {
     where
         T: ?Sized + Serialize,
     {
-        key.serialize(&mut **self)
+        self.output += &self.tab;
+        self.raw_flag = true;
+        key.serialize(&mut **self)?;
+        self.output += ": ";
+        self.raw_flag = false;
+        Ok(())
     }
 
     fn serialize_value<T>(&mut self, value: &T) -> Result<()>
     where
         T: ?Sized + Serialize,
     {
-        value.serialize(&mut **self)
+        self.raw_flag = true;
+        value.serialize(&mut **self)?;
+        self.output += "\n";
+        self.raw_flag = false;
+        Ok(())
     }
 
     fn end(self) -> Result<()> {
@@ -429,6 +453,7 @@ impl<'a> SerializeStruct for &'a mut SUCCSerializer {
     where
         T: ?Sized + Serialize,
     {
+        self.unindent_flag = false;
         self.field_name = key.to_string();
         value.serialize(&mut **self)?;
         if self.unindent_flag {
